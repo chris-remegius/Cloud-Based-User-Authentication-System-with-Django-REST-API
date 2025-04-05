@@ -1,70 +1,221 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Cloud-Based User Authentication System with Django REST API
 
-## Available Scripts
+This documentation explains the steps to set up a **Cloud-Based User Authentication System** using **Django** and **Django REST Framework** with **JWT (JSON Web Token)** authentication. The system is built to register users, authenticate them, and provide a token-based authentication for accessing protected API endpoints.
 
-In the project directory, you can run:
+## Table of Contents
+1. [Prerequisites](#prerequisites)
+2. [Installation and Setup](#installation-and-setup)
+3. [Creating a Django Project](#creating-a-django-project)
+4. [Install Dependencies](#install-dependencies)
+5. [Configure Authentication System](#configure-authentication-system)
+6. [Testing the API](#testing-the-api)
+7. [Conclusion](#conclusion)
 
-### `npm start`
+## Prerequisites
+To follow this tutorial, you need:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Python 3.8 or above
+- Django 4.x
+- Django REST Framework
+- Djoser (for authentication)
+- Postman (or any API testing tool)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Installation and Setup
 
-### `npm test`
+1. **Create a virtual environment** to isolate your project dependencies:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+python -m venv venv
+```
 
-### `npm run build`
+2. **Activate the virtual environment**:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+   - On Windows:
+   ```bash
+   venv\Scriptsctivate
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. **Install required dependencies**:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+pip install django djangorestframework djoser
+```
 
-### `npm run eject`
+## Creating a Django Project
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. **Start a new Django project**:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+django-admin startproject cloud_auth
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+2. **Navigate to the project directory**:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+cd cloud_auth
+```
 
-## Learn More
+3. **Create a Django app** for handling the authentication logic:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+python manage.py startapp core
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+4. **Add `core` and `rest_framework` to `INSTALLED_APPS`** in `cloud_auth/settings.py`:
 
-### Code Splitting
+```python
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',  # Add this line
+    'djoser',  # Add this line
+    'core',  # Add this line
+]
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Install Dependencies
 
-### Analyzing the Bundle Size
+1. Install the Django REST Framework and Djoser for easy user management:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```bash
+pip install djangorestframework djoser
+```
 
-### Making a Progressive Web App
+2. In `cloud_auth/settings.py`, configure the REST Framework and Djoser settings:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```python
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.JWTAuthentication',
+    ],
+}
 
-### Advanced Configuration
+DJOSER = {
+    "USER_CREATE_PASSWORD_RETYPE": True,
+    "SEND_CONFIRMATION_EMAIL": False,
+    "USER_CREATE_FIELDS": ['username', 'password', 'email'],
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Configure Authentication System
 
-### Deployment
+1. **Add URL patterns** in `core/urls.py`:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```python
+from django.urls import path, include
+from .views import index
 
-### `npm run build` fails to minify
+urlpatterns = [
+    path('', index),
+    path('api/auth/', include('djoser.urls')),  # Djoser URLs
+    path('api/auth/', include('djoser.urls.jwt')),  # JWT URLs
+]
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+2. **Create a basic view** for `index` in `core/views.py`:
+
+```python
+from django.shortcuts import render
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+def index(request):
+    return Response({"message": "Welcome to the User Authentication System"})
+```
+
+3. **Apply migrations** to set up the database and user model:
+
+```bash
+python manage.py migrate
+```
+
+## Testing the API
+
+### Register a New User
+
+#### Endpoint:
+```bash
+POST http://127.0.0.1:8000/api/auth/users/
+```
+
+#### Headers:
+- `Content-Type: application/json`
+
+#### Body (example):
+```json
+{
+  "username": "testuser",
+  "password": "testpassword123",
+  "email": "test@example.com"
+}
+```
+
+Response:
+
+```json
+{
+  "username": "testuser",
+  "id": 1
+}
+```
+
+### Login to Get JWT Token
+
+#### Endpoint:
+```bash
+POST http://127.0.0.1:8000/api/auth/jwt/create/
+```
+
+#### Headers:
+- `Content-Type: application/json`
+
+#### Body (example):
+```json
+{
+  "username": "testuser",
+  "password": "testpassword123"
+}
+```
+
+Response:
+```json
+{
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOi...",
+  "access": "eyJ0eXAiOiJKV1QiLCJhbGciOi..."
+}
+```
+
+Copy the `access` token for future API calls.
+
+### Access Protected Route
+
+#### Endpoint:
+```bash
+GET http://127.0.0.1:8000/api/protected/
+```
+
+#### Headers:
+- `Authorization: Bearer <your_access_token>`
+
+Response (when token is valid):
+
+```json
+{
+  "message": "Hello testuser, you're authenticated!"
+}
+```
+
+## Conclusion
+
+You have successfully set up a user authentication system with JWT in Django using Django REST Framework and Djoser. You can now easily create, login, and protect your API routes with token-based authentication.
+
+The next steps involve adding additional user management features like password reset, email confirmation, etc., as needed.
+
+For the full source code, check out the [GitHub Repository](https://github.com/your-username/your-repository).
+
+---
